@@ -19,7 +19,10 @@ df = pd.read_csv(file_url)
 df = df[~df['slug'].str.contains('subscription', case=False, na=False)]
 
 # retrieve the last updated timestamp
-last_updated = st.secrets["LAST_UPDATED"]
+last_updated_url = st.secrets["LAST_UPDATED"]
+
+# read the text from the url
+last_updated = pd.read_csv(last_updated_url, header=None).iloc[0, 0]
 
 
 # observed that the way the bonus points works is that currentprice_bonusPoint reflects the number of points earnt per casevariant_1
