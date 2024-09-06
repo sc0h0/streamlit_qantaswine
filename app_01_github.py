@@ -3,9 +3,6 @@ import pandas as pd
 import plotly.express as px
 import numpy as np
 
-
-# streamlit run .\app_01.py
-
 # Retrieve the DATA_LINK from Streamlit Secrets
 decrypted_link = st.secrets["DATA_LINK"]
 
@@ -21,7 +18,8 @@ df = pd.read_csv(file_url)
 # Remove any slug which contains the word 'subscription'
 df = df[~df['slug'].str.contains('subscription', case=False, na=False)]
 
-# Your existing code for processing or visualizing the data can go here
+# retrieve the last updated timestamp
+last_updated = st.secrets["LAST_UPDATED"]
 
 
 # observed that the way the bonus points works is that currentprice_bonusPoint reflects the number of points earnt per casevariant_1
@@ -37,6 +35,9 @@ df['cents_per_point'] = df['cents_per_point'].round(2)
 # calculate the price per bottle
 df['price_per_bottle'] = df['currentprice_cashprice']
 
+# remove any non wine with price per bottle less thatn $1
+df = df[df['price_per_bottle'] >= 1]
+
 
 
 # create a historical df containing only price_per_bottle and price_per_point
@@ -44,11 +45,9 @@ df['price_per_bottle'] = df['currentprice_cashprice']
 # 'wine_name', 'price_per_bottle', 'cents_per_point', 'rec_deleted_flag'
 df_hist = df[(df['eff_to'] == '9999-12-31')][['wine_name', 'price_per_bottle', 'cents_per_point', 'rec_deleted_flag', 'slug', 'wine_key']].copy()
 
-
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-import numpy as np
+# Add app title and last updated timestamp to the main page
+st.title("Qantas Wine Bonus Point Tracker")
+st.text(last_updated)
 
 # Sidebar form for user input
 with st.sidebar.form(key='filter_form'):
@@ -156,6 +155,18 @@ fig = px.scatter(
 fig.update_xaxes(range=[0, filtered_df['price_per_bottle'].max()])
 fig.update_yaxes(range=[0, filtered_df['cents_per_point'].max()])
 
+# Update layout to move legend below the graph
+fig.update_layout(
+    legend=dict(
+        orientation="h",  # Horizontal layout
+        yanchor="top",  # Anchor legend at the top of the extra space
+        y=-0.3,  # Position below the chart, adjust this to move it further down
+        xanchor="center",  # Center the legend horizontally
+        x=0.5  # Center the legend relative to the chart
+    ),
+    margin=dict(b=80)  # Add more margin to the bottom to accommodate the legend
+)
+
 # Display the plot in Streamlit
 st.plotly_chart(fig)
 
@@ -172,11 +183,24 @@ filtered_df = filtered_df.head(10)
 # Display a table with wine name, price, and clickable URL
 filtered_df['View Wine'] = filtered_df['url'].apply(lambda x: f'<a href="{x}" target="_blank">View Wine</a>')
 
+# Create a dictionary to map original column names to prettier versions
+pretty_column_names = {
+    'wine_name': 'Wine Name',
+    'price_per_bottle': 'Price per Bottle ($)',
+    'cents_per_point': 'Cents per Qantas Point',
+    'category': 'Category',
+    'View Wine': 'Link to Wine'
+}
+
 # Select the relevant columns to display
 table_df = filtered_df[['wine_name', 'price_per_bottle', 'cents_per_point', 'category', 'View Wine']]
 
-# Display the table with clickable links
+# Rename columns for display purposes
+table_df = table_df.rename(columns=pretty_column_names)
+
+# Display the table with clickable links and prettified column names
 st.write(table_df.to_html(escape=False), unsafe_allow_html=True)
+
 
 
 
