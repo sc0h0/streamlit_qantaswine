@@ -3,25 +3,18 @@ import pandas as pd
 import plotly.express as px
 import numpy as np
 
+# Cache data loading with a TTL of 1 hour (3600 seconds)
+@st.cache_data(ttl=3600)
+def load_data(file_url):
+    return pd.read_csv(file_url)
+
 # Retrieve the DATA_LINK from Streamlit Secrets
-decrypted_link = st.secrets["DATA_LINK"]
-
-# Google Drive link for the CSV file
-file_url = decrypted_link
-
-# Google Drive link for the CSV file
-file_url = decrypted_link
-
-if 'df' not in st.session_state:
-    df = pd.read_csv(file_url)
-    # Store the DataFrame in session_state to avoid repeated loads
-    st.session_state['df'] = df
-else:
-    df = st.session_state['df']
-
+file_url = st.secrets["DATA_LINK"]
+df = load_data(file_url)
 
 # Remove any slug which contains the word 'subscription'
 df = df[~df['slug'].str.contains('subscription', case=False, na=False)]
+
 
 # retrieve the last updated timestamp
 last_updated_url = st.secrets["LAST_UPDATED"]
