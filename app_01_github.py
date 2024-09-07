@@ -12,8 +12,13 @@ file_url = decrypted_link
 # Google Drive link for the CSV file
 file_url = decrypted_link
 
-# Load the CSV file from Google Drive link
-df = pd.read_csv(file_url)
+if 'df' not in st.session_state:
+    df = pd.read_csv(file_url)
+    # Store the DataFrame in session_state to avoid repeated loads
+    st.session_state['df'] = df
+else:
+    df = st.session_state['df']
+
 
 # Remove any slug which contains the word 'subscription'
 df = df[~df['slug'].str.contains('subscription', case=False, na=False)]
